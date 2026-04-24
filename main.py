@@ -87,16 +87,19 @@ class TrainingPlanner:
         self.clear_inputs()
     
     def apply_filter(self):
-        filter_type = self.filter_type.get().lower()
-        filter_date = self.filter_date.get()
-        
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        
-        for training in self.trainings:
-            if (not filter_type or filter_type in training['type'].lower()) and \
-               (not filter_date or filter_date == training['date']):
-                self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))    
+        try:
+            filter_type = self.filter_type.get().lower()
+            filter_date = self.filter_date.get()
+            
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+            
+            for training in self.trainings:
+                if (not filter_type or filter_type in training['type'].lower()) and \
+                   (not filter_date or filter_date == training['date']):                    self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))
+        except Exception as e:
+            messagebox.showerror("Ошибка", f"Ошибка при фильтрации: {e}")
+    
     def refresh_table(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
