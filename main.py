@@ -13,52 +13,56 @@ class TrainingPlanner:
         self.create_widgets()
         
     def create_widgets(self):
-        tk.Label(self.root, text="Дата (YYYY-MM-DD):").grid(row=0, column=0, padx=10, pady=5)
+        # Поля ввода
+        tk.Label(self.root, text="Дата (YYYY-MM-DD):").grid(row=0, column=0, padx=10, pady=5, sticky="e")
         self.date_entry = tk.Entry(self.root)
         self.date_entry.grid(row=0, column=1, padx=10, pady=5)
         
-        tk.Label(self.root, text="Тип тренировки:").grid(row=1, column=0, padx=10, pady=5)
+        tk.Label(self.root, text="Тип тренировки:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
         self.type_entry = tk.Entry(self.root)
         self.type_entry.grid(row=1, column=1, padx=10, pady=5)
         
-        tk.Label(self.root, text="Длительность (мин):").grid(row=2, column=0, padx=10, pady=5)
+        tk.Label(self.root, text="Длительность (мин):").grid(row=2, column=0, padx=10, pady=5, sticky="e")
         self.duration_entry = tk.Entry(self.root)
         self.duration_entry.grid(row=2, column=1, padx=10, pady=5)
         
+        # Кнопка добавления
         tk.Button(self.root, text="Добавить тренировку", command=self.add_training).grid(row=3, column=0, columnspan=2, pady=10)
         
-        tk.Label(self.root, text="Фильтр по типу:").grid(row=4, column=0, padx=10, pady=5)
+        # Фильтры
+        tk.Label(self.root, text="Фильтр по типу:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
         self.filter_type = tk.Entry(self.root)
         self.filter_type.grid(row=4, column=1, padx=10, pady=5)
         
-        tk.Label(self.root, text="Фильтр по дате:").grid(row=5, column=0, padx=10, pady=5)
+        tk.Label(self.root, text="Фильтр по дате:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
         self.filter_date = tk.Entry(self.root)
         self.filter_date.grid(row=5, column=1, padx=10, pady=5)
         
         tk.Button(self.root, text="Применить фильтр", command=self.apply_filter).grid(row=6, column=0, columnspan=2, pady=5)
         
+        # Таблица
         columns = ('date', 'type', 'duration')
         self.tree = ttk.Treeview(self.root, columns=columns, show='headings')
         self.tree.heading('date', text='Дата')
         self.tree.heading('type', text='Тип тренировки')
         self.tree.heading('duration', text='Длительность')
         self.tree.grid(row=7, column=0, columnspan=2, padx=10, pady=10)
-        
-        self.refresh_table()
+                self.refresh_table()
     
     def validate_input(self, date, duration, training_type):
-        # Проверка типа тренировки        if not training_type or not training_type.strip():
+        # 1. Проверка типа тренировки (не пустой)
+        if not training_type or not training_type.strip():
             messagebox.showerror("Ошибка", "Тип тренировки не может быть пустым")
             return False
         
-        # Проверка формата даты
+        # 2. Проверка формата даты
         try:
             datetime.strptime(date, '%Y-%m-%d')
         except ValueError:
             messagebox.showerror("Ошибка", "Неверный формат даты. Используйте YYYY-MM-DD")
             return False
         
-        # Проверка длительности
+        # 3. Проверка длительности
         try:
             dur = int(duration)
             if dur <= 0:
@@ -82,27 +86,34 @@ class TrainingPlanner:
             'type': training_type.strip(), 
             'duration': int(duration)
         })
+        
         self.save_data()
         self.refresh_table()
         self.clear_inputs()
     
     def apply_filter(self):
         try:
-            filter_type = self.filter_type.get().lower()
-            filter_date = self.filter_date.get()
+            filter_type = self.filter_type.get().lower().strip()
+            filter_date = self.filter_date.get().strip()
             
-            for item in self.tree.get_children():
+            # Очищаем таблицу            for item in self.tree.get_children():
                 self.tree.delete(item)
             
+            # Фильтруем данные
             for training in self.trainings:
-                if (not filter_type or filter_type in training['type'].lower()) and \
-                   (not filter_date or filter_date == training['date']):                    self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))
+                type_match = (not filter_type) or (filter_type in training['type'].lower())
+                date_match = (not filter_date) or (filter_date == training['date'])
+                
+                if type_match and date_match:
+                    self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))
         except Exception as e:
             messagebox.showerror("Ошибка", f"Ошибка при фильтрации: {e}")
     
     def refresh_table(self):
+        # Полное обновление таблицы
         for item in self.tree.get_children():
             self.tree.delete(item)
+        
         for training in self.trainings:
             self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))
     
