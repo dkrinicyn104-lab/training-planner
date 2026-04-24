@@ -46,18 +46,27 @@ class TrainingPlanner:
         
         self.refresh_table()
     
-    def validate_input(self, date, duration):
-        try:            datetime.strptime(date, '%Y-%m-%d')
-        except ValueError:
-            messagebox.showerror("Ошибка", "Неверный формат даты")
+    def validate_input(self, date, duration, training_type):
+        # Проверка типа тренировки        if not training_type or not training_type.strip():
+            messagebox.showerror("Ошибка", "Тип тренировки не может быть пустым")
             return False
+        
+        # Проверка формата даты
+        try:
+            datetime.strptime(date, '%Y-%m-%d')
+        except ValueError:
+            messagebox.showerror("Ошибка", "Неверный формат даты. Используйте YYYY-MM-DD")
+            return False
+        
+        # Проверка длительности
         try:
             dur = int(duration)
             if dur <= 0:
                 raise ValueError
         except ValueError:
-            messagebox.showerror("Ошибка", "Длительность - положительное число")
+            messagebox.showerror("Ошибка", "Длительность должна быть положительным числом")
             return False
+        
         return True
     
     def add_training(self):
@@ -65,10 +74,14 @@ class TrainingPlanner:
         training_type = self.type_entry.get()
         duration = self.duration_entry.get()
         
-        if not self.validate_input(date, duration):
+        if not self.validate_input(date, duration, training_type):
             return
         
-        self.trainings.append({'date': date, 'type': training_type, 'duration': int(duration)})
+        self.trainings.append({
+            'date': date, 
+            'type': training_type.strip(), 
+            'duration': int(duration)
+        })
         self.save_data()
         self.refresh_table()
         self.clear_inputs()
@@ -83,8 +96,7 @@ class TrainingPlanner:
         for training in self.trainings:
             if (not filter_type or filter_type in training['type'].lower()) and \
                (not filter_date or filter_date == training['date']):
-                self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))
-    
+                self.tree.insert('', tk.END, values=(training['date'], training['type'], training['duration']))    
     def refresh_table(self):
         for item in self.tree.get_children():
             self.tree.delete(item)
@@ -96,15 +108,21 @@ class TrainingPlanner:
         self.type_entry.delete(0, tk.END)
         self.duration_entry.delete(0, tk.END)
     
-    def save_data(self):        with open('trainings.json', 'w', encoding='utf-8') as f:
-            json.dump(self.trainings, f, ensure_ascii=False, indent=2)
+    def save_data(self):
+        try:
+            with open('trainings.json', 'w', encoding='utf-8') as f:
+                json.dump(self.trainings, f, ensure_ascii=False, indent=2)
+        except IOError as e:
+            messagebox.showerror("Ошибка", f"Не удалось сохранить данные: {e}")
     
     def load_data(self):
         if os.path.exists('trainings.json'):
             try:
                 with open('trainings.json', 'r', encoding='utf-8') as f:
                     self.trainings = json.load(f)
-            except:
+            except json.JSONDecodeError:
+                self.trainings = []
+            except IOError:
                 self.trainings = []
 
 if __name__ == "__main__":
